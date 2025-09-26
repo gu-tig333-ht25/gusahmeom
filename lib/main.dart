@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'todo_list_page.dart';
+import 'pages/todo_list_page.dart';
 
 
 void main() {
@@ -19,8 +19,8 @@ class TodoApp extends StatelessWidget {
       colorScheme: const ColorScheme.light(
         primary: Colors.black,
         onPrimary: Colors.white,
-        background: Colors.white,   
-        onBackground: Colors.black, 
+        surface: Colors.white,   
+        onSurface: Colors.black, 
       ),
 
       appBarTheme: const AppBarTheme(

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:template/todo.dart';
+import '../models/todo.dart';
 import 'create_todo_page.dart';
-import 'todo_store.dart';
+import '../services/todo_service.dart';
 
-// This widget is the main page of the app, displaying the list of todos.
+// This widget represents the main page of the Todo application.
 
 class TodoListPage extends StatefulWidget {
   const TodoListPage({super.key});
@@ -13,50 +13,70 @@ class TodoListPage extends StatefulWidget {
 }
 
 class _TodoListPageState extends State<TodoListPage> {
+  
+  // Current filter: 'all', 'done', or 'undone'
   String filter = 'all';
+  // Current list of todos
+  List<Todo> _todos = [];
 
-  // getTodos returns the list of todos based on the current filter.
-  List<Todo> getTodos() {
+  // Initialize state and load todos
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  // Initialize the TodoStore and load the initial list of todos
+  Future<void> _init() async {
+    await TodoService.init(); 
+    await _reload(); 
+  }
+
+  // Reload the list of todos based on the current filter
+  Future<void> _reload() async {
+    List<Todo> list;
     if (filter == 'all') {
-      return TodoStore.todos;
-    } else if (filter == 'done') {
-      return TodoStore.getAlldone();
+      list = await TodoService.getAll();
     } else if (filter == 'undone') {
-      return TodoStore.getAllundone();
+      list = await TodoService.getAllUndone();
     } else {
-      return TodoStore.todos;
+      list = await TodoService.getAllDone();
     }
+    if (mounted) setState(() => _todos = list);
   }
 
-  // _filterTodos updates the filter and refreshes the UI.
-  void _filterTodos(String selectedFilter) {
-    setState(() {
-      filter = selectedFilter;
-    });
+  // Get the current list of todos
+  List<Todo> getTodos() => _todos;
+
+  // Change filter and refresh list
+  void _filterTodos(String selectedFilter) async {
+    setState(() => filter = selectedFilter);
+    await _reload();
   }
 
-  // _onTodoToggle toggles the done status of a todo and refreshes the UI.
-  void _onTodoToggle(int index) {
-    setState(() {
-      TodoStore.toggle(index);
-    });
+  // Toggle todo done status and refresh list
+  Future<void> _onTodoToggle(int index) async {
+    final t = getTodos()[index];
+    final updated = t.copyWith(done: !t.done); 
+    await TodoService.update(updated); 
+    await _reload(); 
   }
 
-  // _onTodoRemove removes a todo and refreshes the UI.
-  void _onTodoRemove(int index) {
-    setState(() {
-      TodoStore.remove(index);
-    });
+  // Remove todo and refresh list
+  Future<void> _onTodoRemove(int index) async {
+    final t = getTodos()[index];
+    await TodoService.remove(t); 
+    await _reload();
   }
 
-  // _onCreateTodo navigates to the CreateTodoPage and refreshes the UI when returning.
-  void _onCreateTodo() {
-    Navigator.push(
+  // Navigate to CreateTodoPage and refresh list on return
+  Future<void> _onCreateTodo() async {
+    await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => CreateTodoPage()),
-    ).then((_) {
-      setState(() {});
-    });
+      MaterialPageRoute(builder: (_) => CreateTodoPage()),
+    );
+
+    await _reload(); 
   }
 
   @override
@@ -93,16 +113,24 @@ class _TodoListPageState extends State<TodoListPage> {
       ),
       // Build scrollable list of todos
       body: ListView.builder(
-        itemCount: getTodos().length,
+        itemCount: _todos.length,
         itemBuilder: (context, index) {
-          final todo = getTodos()[index];
+          final todo = _todos[index];
           return ListTile(
             // Checkbox to toggle done status
-            leading: Checkbox(
-              value: todo.done,
-              onChanged: (_) => _onTodoToggle(index),
-              fillColor: const WidgetStatePropertyAll(Colors.transparent),
-              checkColor: Colors.black,
+            leading: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.black, width: 2.5),
+              ),
+              child: Checkbox(
+                value: todo.done,
+                onChanged: (_) => _onTodoToggle(index),
+                checkColor: Colors.black,
+                fillColor: WidgetStateProperty.all(Colors.transparent),
+                side: const BorderSide(color: Colors.transparent),
+              ),
             ),
 
             // Title with strikethrough if done
