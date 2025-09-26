@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'todo_store.dart';
+import '../services/todo_service.dart';
 
 // This widget provides a page to create a new todo item.
 
@@ -10,14 +10,12 @@ class CreateTodoPage extends StatelessWidget {
   final TextEditingController _controller = TextEditingController();
 
   // _onAddPressed adds the new todo and clears the input field.
-  void _onAddPressed() {
-    final text = _controller.text;
-    if (text.isEmpty) {
-      return;
-    }
-
-    TodoStore.add(text);
+  Future<void> _onAddPressed() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+    await TodoService.add(text);          
     _controller.clear();
+
   }
 
   @override
